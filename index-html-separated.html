@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizador de Precios Procoquim</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header con gradiente -->
+    <div class="gradient-bg text-white py-8">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-pulse">
+                    🧪 Actualizador de Precios Procoquim
+                </h1>
+                <p class="text-xl opacity-90 max-w-3xl mx-auto">
+                    Transforma facturas de Procoquim en actualizaciones automáticas de inventario con tecnología inteligente
+                </p>
+                <div class="mt-6 flex justify-center space-x-4">
+                    <span class="px-4 py-2 bg-white bg-opacity-20 rounded-full text-sm">⚡ Procesamiento Automático</span>
+                    <span class="px-4 py-2 bg-white bg-opacity-20 rounded-full text-sm">🎯 Coincidencias Inteligentes</span>
+                    <span class="px-4 py-2 bg-white bg-opacity-20 rounded-full text-sm">📊 Exportación Excel</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 -mt-4">
+        <!-- Indicadores de progreso mejorados -->
+        <div class="mb-12">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 glass-effect">
+                <h2 class="text-2xl font-semibold text-center mb-8 text-gray-800">Progreso del Proceso</h2>
+                <div class="flex items-center justify-center space-x-8">
+                    <div class="progress-step flex flex-col items-center" id="step1">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold bg-gray-100 text-gray-400 transition-all duration-500">
+                            📄
+                        </div>
+                        <span class="mt-3 text-sm font-medium text-gray-400">Cargar Factura</span>
+                        <div class="mt-1 w-2 h-2 rounded-full bg-gray-300 transition-all duration-500"></div>
+                    </div>
+                    <div class="progress-step flex flex-col items-center" id="step2">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold bg-gray-100 text-gray-400 transition-all duration-500">
+                            📊
+                        </div>
+                        <span class="mt-3 text-sm font-medium text-gray-400">Cargar Excel</span>
+                        <div class="mt-1 w-2 h-2 rounded-full bg-gray-300 transition-all duration-500"></div>
+                    </div>
+                    <div class="progress-step flex flex-col items-center" id="step3">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold bg-gray-100 text-gray-400 transition-all duration-500">
+                            🔄
+                        </div>
+                        <span class="mt-3 text-sm font-medium text-gray-400">Procesar</span>
+                        <div class="mt-1 w-2 h-2 rounded-full bg-gray-300 transition-all duration-500"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secciones de carga con diseño mejorado -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Carga de factura -->
+            <div class="section-fade">
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover file-drop-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="text-center">
+                        <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-3xl text-white icon-bounce">
+                            📄
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">1. Cargar Factura PDF</h3>
+                        <p class="text-gray-600 mb-6">Arrastra tu factura aquí o selecciona el archivo</p>
+                        
+                        <div class="mb-6">
+                            <label class="cursor-pointer button-gradient text-white px-6 py-3 rounded-xl font-semibold inline-block">
+                                📤 Subir PDF de Factura
+                                <input type="file" class="hidden" accept=".pdf,.txt" onchange="handleFileUpload(event)">
+                            </label>
+                        </div>
+                        
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-300"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-2 bg-white text-gray-500">o pega el texto</span>
+                            </div>
+                        </div>
+                        
+                        <textarea
+                            class="w-full h-32 p-4 mt-4 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300"
+                            placeholder="Pega aquí el texto de la factura..."
+                            onchange="handleTextPaste(event)"
+                            id="textInput">
+                        </textarea>
+                        
+                        <div id="invoiceStatus" class="mt-4 hidden">
+                            <div class="flex items-center justify-center text-green-600 bg-green-50 rounded-xl p-4">
+                                <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3 success-checkmark">✓</div>
+                                <span class="font-semibold">Factura procesada exitosamente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carga de Excel -->
+            <div class="section-fade">
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover file-drop-zone" ondrop="handleExcelDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="text-center">
+                        <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-3xl text-white icon-bounce">
+                            📊
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">2. Cargar Excel de Inventario</h3>
+                        <p class="text-gray-600 mb-6">Sube tu archivo Excel con el inventario de productos químicos</p>
+                        
+                        <div class="mb-6">
+                            <label class="cursor-pointer bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-semibold inline-block hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105">
+                                📈 Subir Excel (.xlsx)
+                                <input type="file" class="hidden" accept=".xlsx,.xls" onchange="handleExcelUpload(event)">
+                            </label>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-xl p-4">
+                            <p class="text-sm text-blue-700">
+                                💡 <strong>Tip:</strong> Asegúrate de que tu Excel tenga las columnas "🛍️ PRODUCTOS" y "💰 PRECIO BASE"
+                            </p>
+                        </div>
+                        
+                        <div id="excelStatus" class="mt-4 hidden">
+                            <div class="flex items-center justify-center text-green-600 bg-green-50 rounded-xl p-4">
+                                <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3 success-checkmark">✓</div>
+                                <span class="font-semibold">Excel cargado exitosamente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón de actualización mejorado -->
+        <div class="mb-12 text-center section-fade" id="updateSection" style="display: none;">
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">¿Listo para la magia? ✨</h3>
+                <p class="text-gray-600 mb-6">Procesaremos tu factura y actualizaremos automáticamente los precios en tu inventario</p>
+                <button onclick="updateExcelPrices()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    🚀 Actualizar Precios Automáticamente
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading mejorado -->
+        <div id="loading" class="flex flex-col items-center justify-center py-16" style="display: none;">
+            <div class="spinner mb-4"></div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Procesando tu información...</h3>
+            <p class="text-gray-500 text-center max-w-md">
+                Nuestros algoritmos están analizando la factura y buscando coincidencias inteligentes en tu inventario
+            </p>
+            <div class="mt-4 w-64 bg-gray-200 rounded-full h-2">
+                <div class="bg-gradient-to-r from-blue-400 to-purple-500 h-2 rounded-full progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Error display mejorado -->
+        <div id="error" class="mb-8" style="display: none;">
+            <div class="bg-red-50 border-l-4 border-red-400 p-6 rounded-xl shadow-lg slide-in">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                            <span class="text-red-600 font-bold">!</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-semibold text-red-800">Oops! Algo salió mal</h3>
+                        <p class="text-red-700" id="errorMessage"></p>
+                    </div>
+                    <button onclick="hideError()" class="ml-auto text-red-400 hover:text-red-600">
+                        <span class="sr-only">Cerrar</span>
+                        ✕
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados y detalles -->
+        <div id="results" style="display: none;" class="section-fade"></div>
+        <div id="invoiceDetails" style="display: none;" class="section-fade"></div>
+    </div>
+
+    <!-- Floating action button -->
+    <div class="floating-action" id="floatingAction" style="display: none;">
+        <button onclick="downloadUpdatedExcel()" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110">
+            <span class="text-2xl">📥</span>
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
