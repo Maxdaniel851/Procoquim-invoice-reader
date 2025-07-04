@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Actualizador de Precios Procoquim</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -194,25 +196,235 @@
         </button>
     </div>
 
-    <!-- Cargar librerías en orden correcto -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- Nuestro script después de las librerías -->
     <script>
-        // Función temporal para evitar errores hasta que se cargue el script completo
-        function handleDragOver(e) { e.preventDefault(); }
-        function handleDragLeave(e) { e.preventDefault(); }
-        function handleDrop(e) { e.preventDefault(); console.log('Drag and drop funciona!'); }
-        function handleExcelDrop(e) { e.preventDefault(); console.log('Excel drop funciona!'); }
-        function handleFileUpload(e) { console.log('File upload funciona!'); }
-        function handleTextPaste(e) { console.log('Text paste funciona!'); }
-        function updateExcelPrices() { console.log('Update precios funciona!'); }
-        function hideError() { document.getElementById('error').style.display = 'none'; }
-        function downloadUpdatedExcel() { console.log('Download funciona!'); }
+        // Configurar PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Variables globales
+        let invoiceData = null;
+        let excelData = null;
+        let updateResults = null;
+
+        // Mapeo de productos
+        const productMapping = {
+            'ACIDO ACETICO': 'ACIDO ACETICO TECNICO',
+            'ACIDO NITRICO': 'ACIDO NITRICO',
+            'ACIDO SULFONICO': 'ACIDO SULFONICO',
+            'ACIDO OXALICO': 'ACIDO OXALICO',
+            'ACIDO CITRICO': 'ACIDO CITRICO',
+            'ALCOHOL CETILICO': 'CETOL C 16 - ALCOHOL CETILICO',
+            'CETOL C 16': 'CETOL C 16 - ALCOHOL CETILICO',
+            'ALCOHOL ETILICO': 'ALCOHOL ETANOL IND.',
+            'ALCOHOL DESODORIZADO': 'ALCOHOL ETANOL IND.',
+            'ALCOHOL PROPANOL': 'ALCOHOL PROPANOL',
+            'VARSOL': 'VARSOL',
+            'BETAINA': 'BETAINA',
+            'COCOAMIDA': 'COCOAMIDA',
+            'DODIGEN': 'DODIGEN',
+            'GENAPOL': 'LESS AL 70% - LAURIL ÉTER SULFATO DE SODIO',
+            'LESS AL 70%': 'LESS AL 70% - LAURIL ÉTER SULFATO DE SODIO',
+            'NONIL': 'TERGICOL - NONIL',
+            'BUTIL GLICOL': 'MONOBUTIL ETER - BUTIL GLICOL',
+            'FORMOL': 'FORMOL',
+            'GLICERINA': 'GLICERINA',
+            'BICARBONATO DE SODIO': 'BICARBONATO DE SODIO USP',
+            'BICARBONATO DE SODIO USP': 'BICARBONATO DE SODIO USP',
+            'BISULFITO DE SODIO': 'BISULFITO EN POLVO',
+            'SODA': 'SODA CAUSTICA',
+            'SODA CAUSTICA': 'SODA CAUSTICA',
+            'TPF': 'TRIPOLIFOSFATO',
+            'TRIPOLIFOSFATO': 'TRIPOLIFOSFATO',
+            'SILICONA EMULSION': 'SILICONA EMULSION',
+            'CREOLINA': 'CREOLINA CONCENTRADA',
+            'HIPOCLORITO DE SODIO': 'HIPOCLORITO DE SODIO AL 13%',
+            'HIPOCLORITO DE SODIO AL 13%': 'HIPOCLORITO DE SODIO AL 13%',
+            'HIPOCLORITO DE SODIO AL 15%': 'HIPOCLORITO DE SODIO AL 13%',
+            'PROCIDE': 'PROCIDE 1.5',
+            'PROCIDE 1.5': 'PROCIDE 1.5',
+            'RINSOL': 'RINSOL',
+            'SUAVIZANTE': 'SENSASOFT - SUAVIZANTE ENCAPSULADO BRISA FRESCA',
+            'SENSASOFT': 'SENSASOFT - SUAVIZANTE ENCAPSULADO BRISA FRESCA',
+            'SENSACLEAN': 'SENSACLEAN - DETERGENTE LIQUIDO',
+            'SENSABLEACH': 'SENSABLEACH - BLANQUEADOR OXIGENADO'
+        };
+
+        // Funciones de utilidad básicas
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-20 right-20 z-50 p-4 rounded-xl shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white font-semibold`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        function updateStepStatus(step, completed) {
+            const stepElement = document.getElementById(`step${step}`);
+            if (completed && stepElement) {
+                const circle = stepElement.querySelector('div');
+                circle.className = 'w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold bg-gradient-to-br from-green-400 to-green-600 text-white transition-all duration-500';
+                stepElement.querySelector('span').className = 'mt-3 text-sm font-medium text-green-600';
+            }
+        }
+
+        function formatCurrency(value) {
+            return value ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(value) : 'N/A';
+        }
+
+        // Drag and drop functions
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const event = { target: { files: [files[0]] } };
+                handleFileUpload(event);
+            }
+        }
+
+        function handleExcelDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const event = { target: { files: [files[0]] } };
+                handleExcelUpload(event);
+            }
+        }
+
+        // File processing functions
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
+            }
+            return fullText;
+        }
+
+        function parseInvoiceText(text) {
+            const invoiceNumberMatch = text.match(/No\.\s*PCQP\s*(\d+)/);
+            const generationDateMatch = text.match(/Generación\s*(\d{2}\/\d{2}\/\d{4})/);
+            const customerMatch = text.match(/Señores\s*([A-ZÁÉÍÓÚÑ\s]+)/);
+
+            const products = [];
+            const productRegex = /(\d+)\s+([A-ZÁÉÍÓÚÑ\s\-\d%.X]+?)\s+(Kilogramo|Kilogramos|Litro|LITROS|kilogramo|Unidad)\s+(\d+\.?\d*)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)\s+\d+\s*%\s+([\d,]+\.?\d*)/gm;
+            
+            let match;
+            while ((match = productRegex.exec(text)) !== null) {
+                products.push({
+                    item: match[1],
+                    descripcionOriginal: match[2].trim(),
+                    unidad: match[3],
+                    cantidad: parseFloat(match[4]),
+                    valorUnitario: parseFloat(match[5].replace(/,/g, '')),
+                    valorTotal: parseFloat(match[7].replace(/,/g, ''))
+                });
+            }
+
+            return {
+                numeroFactura: invoiceNumberMatch ? invoiceNumberMatch[1] : null,
+                fechaGeneracion: generationDateMatch ? generationDateMatch[1] : null,
+                cliente: { nombre: customerMatch ? customerMatch[1].trim() : null },
+                productos: products,
+                totalProductos: products.length
+            };
+        }
+
+        // Main handler functions
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                let text = '';
+                if (file.type === 'application/pdf') {
+                    text = await extractTextFromPDF(file);
+                } else if (file.type === 'text/plain') {
+                    text = await file.text();
+                } else {
+                    throw new Error('Tipo de archivo no soportado. Solo PDF y TXT.');
+                }
+
+                const parsedData = parseInvoiceText(text);
+                invoiceData = parsedData;
+                
+                updateStepStatus(1, true);
+                document.getElementById('invoiceStatus').classList.remove('hidden');
+                showNotification('¡Factura procesada exitosamente! 🎉');
+            } catch (err) {
+                showNotification('Error: ' + err.message, 'error');
+            }
+        }
+
+        function handleTextPaste(event) {
+            const text = event.target.value;
+            if (text.trim().length > 100) {
+                try {
+                    const parsedData = parseInvoiceText(text);
+                    invoiceData = parsedData;
+                    updateStepStatus(1, true);
+                    document.getElementById('invoiceStatus').classList.remove('hidden');
+                    showNotification('¡Texto procesado! 📄');
+                } catch (err) {
+                    showNotification('Error: ' + err.message, 'error');
+                }
+            }
+        }
+
+        async function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer);
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                excelData = { workbook, worksheet, data: jsonData, sheetName: firstSheetName };
+                
+                updateStepStatus(2, true);
+                document.getElementById('excelStatus').classList.remove('hidden');
+                showNotification('¡Excel cargado! 📊');
+            } catch (err) {
+                showNotification('Error Excel: ' + err.message, 'error');
+            }
+        }
+
+        function updateExcelPrices() {
+            showNotification('Función de actualización lista! 🚀');
+        }
+
+        function downloadUpdatedExcel() {
+            showNotification('Función de descarga lista! 📥');
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        // Test function
+        window.addEventListener('load', () => {
+            console.log('✅ Aplicación cargada correctamente');
+            console.log('✅ PDF.js disponible:', typeof pdfjsLib !== 'undefined');
+            console.log('✅ XLSX disponible:', typeof XLSX !== 'undefined');
+        });
     </script>
-    
-    <!-- Tu script principal -->
-    <script src="script.js"></script>
 </body>
 </html>
