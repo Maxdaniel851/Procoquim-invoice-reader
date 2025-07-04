@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Actualizador de Precios Procoquim</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -64,7 +62,7 @@
         <!-- Secciones de carga con diseño mejorado -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             <!-- Carga de factura -->
-            <div class="section-fade">
+            <div class="section-fade visible">
                 <div class="bg-white rounded-2xl shadow-xl p-8 card-hover file-drop-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
                     <div class="text-center">
                         <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-3xl text-white icon-bounce">
@@ -107,7 +105,7 @@
             </div>
 
             <!-- Carga de Excel -->
-            <div class="section-fade">
+            <div class="section-fade visible">
                 <div class="bg-white rounded-2xl shadow-xl p-8 card-hover file-drop-zone" ondrop="handleExcelDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
                     <div class="text-center">
                         <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-3xl text-white icon-bounce">
@@ -141,7 +139,7 @@
         </div>
 
         <!-- Botón de actualización mejorado -->
-        <div class="mb-12 text-center section-fade" id="updateSection" style="display: none;">
+        <div class="mb-12 text-center section-fade visible" id="updateSection" style="display: none;">
             <div class="bg-white rounded-2xl shadow-xl p-8">
                 <h3 class="text-2xl font-bold mb-4 text-gray-800">¿Listo para la magia? ✨</h3>
                 <p class="text-gray-600 mb-6">Procesaremos tu factura y actualizaremos automáticamente los precios en tu inventario</p>
@@ -196,6 +194,25 @@
         </button>
     </div>
 
+    <!-- Cargar librerías en orden correcto -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Nuestro script después de las librerías -->
+    <script>
+        // Función temporal para evitar errores hasta que se cargue el script completo
+        function handleDragOver(e) { e.preventDefault(); }
+        function handleDragLeave(e) { e.preventDefault(); }
+        function handleDrop(e) { e.preventDefault(); console.log('Drag and drop funciona!'); }
+        function handleExcelDrop(e) { e.preventDefault(); console.log('Excel drop funciona!'); }
+        function handleFileUpload(e) { console.log('File upload funciona!'); }
+        function handleTextPaste(e) { console.log('Text paste funciona!'); }
+        function updateExcelPrices() { console.log('Update precios funciona!'); }
+        function hideError() { document.getElementById('error').style.display = 'none'; }
+        function downloadUpdatedExcel() { console.log('Download funciona!'); }
+    </script>
+    
+    <!-- Tu script principal -->
     <script src="script.js"></script>
 </body>
 </html>
